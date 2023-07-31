@@ -11,7 +11,7 @@ public class RayTracingMaster : MonoBehaviour
     private RenderTexture _target;
     private Camera _camera;
     private uint _currentSample = 0;
-    private Material _addMaterial;
+    public Material _addMaterial;
 
     public Vector2 SphereRadius = new Vector2(3.0f, 8.0f);
     public uint SpheresMax = 100;

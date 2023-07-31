@@ -490,9 +490,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd24fd8a82ee4c047881ef56ccf59670, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  resolution: 0.56
+  resolution: 0.643
   DirectionalLight: {fileID: 705507994}
   RayTracingShader: {fileID: 7200000, guid: fad9236f8a3eb1549860d82c2622daf1, type: 3}
+  _addMaterial: {fileID: 2100000, guid: 2b62a6c5507e3834984fa96fd7789693, type: 2}
+  SphereRadius: {x: 3, y: 8}
+  SpheresMax: 100
+  SpherePlacementRadius: 100
 --- !u!114 &963194230
 MonoBehaviour:
   m_ObjectHideFlags: 0
