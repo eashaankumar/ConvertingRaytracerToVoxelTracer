@@ -9,6 +9,26 @@ float2 _PixelOffset;
 float4 _DirectionalLight;
 StructuredBuffer<Sphere> _Spheres;
 
+float2 _Pixel;
+float _Seed;
+float rand()
+{
+    float result = frac(sin(_Seed / 100.0f * dot(_Pixel, float2(12.9898f, 78.233f))) * 43758.5453f);
+    _Seed += 1.0f;
+    return result;
+}
+
+float3 SampleHemisphere(float3 normal)
+{
+    // Uniformly sample hemisphere direction
+    float cosTheta = rand();
+    float sinTheta = sqrt(max(0.0f, 1.0f - cosTheta * cosTheta));
+    float phi = 2 * PI * rand();
+    float3 tangentSpaceDir = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+    // Transform direction to world space
+    return mul(tangentSpaceDir, GetTangentSpace(normal));
+}
+
 Ray CreateCameraRay(float2 uv)
 {
     // Transform the camera origin to world space
@@ -40,8 +60,8 @@ float3 Shade(inout Ray ray, RayHit hit)
     {
         // Reflect the ray and multiply energy with specular reflection
         ray.origin = hit.position + hit.normal * 0.001f;
-        ray.direction = reflect(ray.direction, hit.normal);
-        ray.energy *= hit.specular;
+        ray.direction = SampleHemisphere(hit.normal);
+        ray.energy *= 2 * hit.albedo * sdot(hit.normal, ray.direction);
         // Shadow test ray
         bool shadow = false;
         Ray shadowRay = CreateRay(hit.position + hit.normal * 0.001f, -1 * _DirectionalLight.xyz);
@@ -64,6 +84,7 @@ float3 Shade(inout Ray ray, RayHit hit)
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
+    _Pixel = id.xy;
     // Get the dimensions of the RenderTexture
     uint width, height;
     Result.GetDimensions(width, height);
