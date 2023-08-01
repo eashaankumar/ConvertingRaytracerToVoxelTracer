@@ -8,6 +8,7 @@ float4x4 _CameraInverseProjection;
 float2 _PixelOffset;
 float4 _DirectionalLight;
 StructuredBuffer<Sphere> _Spheres;
+StructuredBuffer<Triangle> _Triangles;
 
 float2 _Pixel;
 float _Seed;
@@ -52,7 +53,27 @@ RayHit Trace(Ray ray)
     for (uint i = 0; i < numSpheres; i++)
         IntersectSphere(ray, bestHit, _Spheres[i]);
 
-    // Trace single triangle
+    uint numTriangles;
+    _Triangles.GetDimensions(numTriangles, stride);
+    float t, u, v;
+    for (uint i = 0; i < numTriangles; i++)
+    {
+        Triangle tri = _Triangles[i];
+        if (IntersectTriangle_MT97(ray, tri.v1, tri.v2, tri.v3, t, u, v))
+        {
+            if (t > 0 && t < bestHit.distance)
+            {
+                bestHit.distance = t;
+                bestHit.position = ray.origin + t * ray.direction;
+                bestHit.normal = normalize(cross(tri.v2 - tri.v1, tri.v3 - tri.v1));
+                bestHit.albedo = tri.albedo;
+                bestHit.specular = tri.specular;
+                bestHit.smoothness = tri.smoothness;
+                bestHit.emission = tri.emission;
+            }
+        }
+    }
+    /*// Trace single triangle
     float3 v0 = float3(-150, 0, -150);
     float3 v1 = float3(150, 0, -150);
     float3 v2 = float3(0, 150 * sqrt(2), -150);
@@ -64,12 +85,12 @@ RayHit Trace(Ray ray)
             bestHit.distance = t;
             bestHit.position = ray.origin + t * ray.direction;
             bestHit.normal = normalize(cross(v1 - v0, v2 - v0));
-            bestHit.albedo = 0.00f;
-            bestHit.specular = 0.65f * float3(1, 0.4f, 0.2f);
-            bestHit.smoothness = 0.9f;
-            bestHit.emission = 0.0f;
+            bestHit.albedo = float3(1, 0.4f, 0.2f);
+            bestHit.specular = 0.0f * float3(1, 0.4f, 0.2f);
+            bestHit.smoothness = 0.0f;
+            bestHit.emission = 1.0f;
         }
-    }
+    }*/
 
     return bestHit;
 }

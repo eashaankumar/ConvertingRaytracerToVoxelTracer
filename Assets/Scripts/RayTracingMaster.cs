@@ -19,11 +19,23 @@ public class RayTracingMaster : MonoBehaviour
     public float SpherePlacementRadius = 100.0f;
 
     private ComputeBuffer _sphereBuffer;
+    private ComputeBuffer _triangleBuffer;
 
     struct Sphere
     {
         public Vector3 position;
         public float radius;
+        public Vector3 albedo;
+        public Vector3 specular;
+        public float smoothness;
+        public Vector3 emission;
+    };
+
+    struct Triangle
+    {
+        public Vector3 v1;
+        public Vector3 v2;
+        public Vector3 v3;
         public Vector3 albedo;
         public Vector3 specular;
         public float smoothness;
@@ -68,6 +80,12 @@ public class RayTracingMaster : MonoBehaviour
 
     private void SetUpScene()
     {
+        Spheres();
+        Triangles();
+    }
+
+    void Spheres()
+    {
         List<Sphere> spheres = new List<Sphere>();
         // Add a number of random spheres
         for (int i = 0; i < SpheresMax; i++)
@@ -104,21 +122,38 @@ public class RayTracingMaster : MonoBehaviour
         SkipSphere:
             continue;
         }
-        /*// sun
-        Vector3 sunColor = new Vector3(DirectionalLight.color.r, DirectionalLight.color.g, DirectionalLight.color.b);
-        spheres.Add(new Sphere 
-            {
-                position = DirectionalLight.transform.position,
-                radius = DirectionalLight.transform.localScale.x,
-                albedo = sunColor,
-                specular = Vector3.zero,
-                smoothness = 0,
-                emission = sunColor * DirectionalLight.intensity,
-            }
-        );*/
         // Assign to compute buffer
         _sphereBuffer = new ComputeBuffer(spheres.Count, 14 * 4); // # of floats * 4
         _sphereBuffer.SetData(spheres);
+    }
+
+    void Triangles()
+    {
+        List<Triangle> triangles = new List<Triangle>();
+        for (int i = 0; i < 100; i++)
+        {
+            Triangle triangle = new Triangle();
+            triangle.v1 = Random.insideUnitSphere * 100;
+            triangle.v2 = Random.insideUnitSphere * 100;
+            triangle.v3 = Random.insideUnitSphere * 100;
+            Color albedo = Random.ColorHSV();
+            triangle.albedo = new Vector3(albedo.r, albedo.g, albedo.b);
+            triangle.specular = Vector3.zero;
+            triangle.smoothness = 0;
+            if (Random.value < 0.5f)
+            {
+                Color emission = Color.Lerp(Color.black, albedo, Random.value);
+                triangle.emission = new Vector3(emission.r, emission.g, emission.b) * Random.value * 5;
+            }
+            else
+            {
+                triangle.emission = Vector3.zero;
+            }
+            triangles.Add(triangle);
+            // Assign to compute buffer
+            _triangleBuffer = new ComputeBuffer(triangles.Count, 19 * 4); // # of floats * 4
+            _triangleBuffer.SetData(triangles);
+        }
     }
 
     private void SetShaderParameters()
@@ -129,6 +164,7 @@ public class RayTracingMaster : MonoBehaviour
         RayTracingShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
         RayTracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
         RayTracingShader.SetBuffer(0, "_Spheres", _sphereBuffer);
+        RayTracingShader.SetBuffer(0, "_Triangles", _triangleBuffer);
         RayTracingShader.SetFloat("_Seed", Random.value);
     }
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -145,6 +181,7 @@ public class RayTracingMaster : MonoBehaviour
         RayTracingShader.SetTexture(0, "Result", _target);
         int threadGroupsX = Mathf.CeilToInt(WIDTH / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(HEIGHT / 8.0f);
+
         RayTracingShader.Dispatch(0, threadGroupsX, threadGroupsY, 1);
         // Blit the result texture to the screen
         if (_addMaterial == null)

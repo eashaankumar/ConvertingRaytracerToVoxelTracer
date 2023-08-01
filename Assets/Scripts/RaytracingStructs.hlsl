@@ -1,5 +1,16 @@
 static const float PI = 3.14159265f;
 
+struct Triangle
+{
+    float3 v1;
+    float3 v2;
+    float3 v3;
+    float3 albedo;
+    float3 specular;
+    float smoothness;
+    float3 emission;
+};
+
 struct Sphere
 {
     float3 position;
