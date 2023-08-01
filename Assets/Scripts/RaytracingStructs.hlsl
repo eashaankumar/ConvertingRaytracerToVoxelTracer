@@ -6,6 +6,8 @@ struct Sphere
     float radius;
     float3 albedo;
     float3 specular;
+    float smoothness;
+    float3 emission;
 };
 
 struct RayHit
@@ -15,6 +17,8 @@ struct RayHit
     float3 normal;
     float3 albedo;
     float3 specular;
+    float smoothness;
+    float3 emission;
 };
 RayHit CreateRayHit()
 {
@@ -24,6 +28,8 @@ RayHit CreateRayHit()
     hit.normal = float3(0.0f, 0.0f, 0.0f);
     hit.albedo = float3(0.0f, 0.0f, 0.0f);
     hit.specular = float3(0.0f, 0.0f, 0.0f);
+    hit.smoothness = 0;
+    hit.emission = float3(0.0f, 0.0f, 0.0f);
     return hit;
 }
 struct Ray
@@ -41,6 +47,11 @@ Ray CreateRay(float3 origin, float3 direction)
     return ray;
 }
 
+float SmoothnessToPhongAlpha(float s)
+{
+    return pow(1000.0f, s * s);
+}
+
 void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
 {
     // Calculate distance along the ray where the ground plane is intersected
@@ -52,6 +63,8 @@ void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
         bestHit.normal = float3(0.0f, 1.0f, 0.0f);
         bestHit.albedo = float3(1.0f, 1.0f, 1.0f);
         bestHit.specular = float3(0.0f, 0.0f, 0.0f);
+        bestHit.smoothness = 0.1f;
+        bestHit.emission = float3(0.0f, 0.0f, 0.0f);
     }
 }
 
@@ -72,6 +85,8 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, Sphere sphere)
         bestHit.normal = normalize(bestHit.position - sphere.position);
         bestHit.albedo = sphere.albedo;
         bestHit.specular = sphere.specular;
+        bestHit.smoothness = sphere.smoothness;
+        bestHit.emission = sphere.emission;
     }
 }
 
@@ -90,4 +105,9 @@ float3x3 GetTangentSpace(float3 normal)
 float sdot(float3 x, float3 y, float f = 1.0f)
 {
     return saturate(dot(x, y) * f);
+}
+
+float energy(float3 color)
+{
+    return dot(color, 1.0f / 3.0f);
 }
