@@ -86,19 +86,38 @@ public class RayTracingMaster : MonoBehaviour
             }
             // Albedo and specular color
             Color color = Random.ColorHSV();
-            bool metal = Random.value < 0.5f;
+            bool metal = Random.value < 0.0f;
             sphere.albedo = metal ? Vector3.zero : new Vector3(color.r, color.g, color.b);
             sphere.specular = metal ? new Vector3(color.r, color.g, color.b) : Vector3.one * 0.04f;
             sphere.smoothness = Random.value;
-            Color emission = Color.Lerp(Color.black, color, Random.value);
-            sphere.emission = new Vector3(emission.r, emission.g, emission.b) * Random.value * 5;
+            if (Random.value < 0.5f)
+            {
+                Color emission = Color.Lerp(Color.black, color, Random.value);
+                sphere.emission = new Vector3(emission.r, emission.g, emission.b) * Random.value * 5;
+            }
+            else
+            {
+                sphere.emission = Vector3.zero;
+            }
             // Add the sphere to the list
             spheres.Add(sphere);
         SkipSphere:
             continue;
         }
+        /*// sun
+        Vector3 sunColor = new Vector3(DirectionalLight.color.r, DirectionalLight.color.g, DirectionalLight.color.b);
+        spheres.Add(new Sphere 
+            {
+                position = DirectionalLight.transform.position,
+                radius = DirectionalLight.transform.localScale.x,
+                albedo = sunColor,
+                specular = Vector3.zero,
+                smoothness = 0,
+                emission = sunColor * DirectionalLight.intensity,
+            }
+        );*/
         // Assign to compute buffer
-        _sphereBuffer = new ComputeBuffer(spheres.Count, 14*4); // # of floats * 4
+        _sphereBuffer = new ComputeBuffer(spheres.Count, 14 * 4); // # of floats * 4
         _sphereBuffer.SetData(spheres);
     }
 

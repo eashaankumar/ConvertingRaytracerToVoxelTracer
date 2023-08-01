@@ -83,13 +83,24 @@ float3 Shade(inout Ray ray, RayHit hit)
             ray.direction = SampleHemisphere(hit.normal, 1.0f);
             ray.energy *= (1.0f / diffChance) * hit.albedo;
         }
+        //return saturate(dot(hit.normal, _DirectionalLight.xyz) * -1) * _DirectionalLight.w * hit.albedo;
+        // Shadow test ray
+        /*bool shadow = false;
+        Ray shadowRay = CreateRay(hit.position + hit.normal * 0.001f, -1 * _DirectionalLight.xyz);
+        RayHit shadowHit = Trace(shadowRay);
+        if (shadowHit.distance != 1.#INF)
+        {
+            return float3(0.0f, 0.0f, 0.0f);
+        }*/
+
         return hit.emission;
     }
     else
     {
         // Erase the ray's energy - the sky doesn't reflect anything
         ray.energy = 0.0f;
-        return float4(ray.direction * 0.5f + 0.5f, 1.0f);
+        //return float4(ray.direction * 0.5f + 0.5f, 1.0f);
+        return float4(0, 0, 0, 0);
     }
 }
 
